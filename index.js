@@ -2,7 +2,8 @@ import express from 'express'
 import mongoose from 'mongoose'
 import dotenv from 'dotenv'
 import dns from 'node:dns'
-import userRoutes from './Routes/User.routes.js' 
+import userRoutes from './Routes/User.routes.js'
+import cookieParser from 'cookie-parser' 
 
 
 dns.setServers([
@@ -24,6 +25,7 @@ mongoose.connect(process.env.dbUrl).then(() => {
 })
 
 app.use(express.json())
+app.use(cookieParser())
 app.use('/users', userRoutes)
 
 app.get('/', (req, res) => {

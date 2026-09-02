@@ -1,7 +1,12 @@
 // register controller
 import User from "../modules/user.model.js"
 import bcrypt from 'bcrypt'
+import genToken from "../utils/generateToken.js"
 
+
+const cookieOptions ={
+    httpOnly:true
+}
 
 export const registerUser = async(req,res)=>{
 
@@ -37,6 +42,9 @@ export const registerUser = async(req,res)=>{
             password: hashedPassword
         })
 
+        const token = genToken(newUser._id)
+        res.cookie('token', token, cookieOptions)
+
         return res.status(201).json({message : 'User Registered', user: newUser})
         
     } catch (error) {
@@ -45,4 +53,33 @@ export const registerUser = async(req,res)=>{
     
 
 
+}
+
+export const loginUser = async(req,res)=>{
+    try {
+        const{email, password} = req.body
+
+        if(!name || !password){
+            return res.status(400).json({message : 'All fields are Required'})
+        }
+        const user = await User.findOne({email})
+
+        if(!user){
+            return res.status(404).json({message : 'User not found'})
+        }
+       const passwordMatched = await bycrpt.compare(password, user.password)
+       if(!passwordMatched){
+        return res.status(401).json({message: 'Password did not match'})
+       }
+
+       res.status(200).json({message: 'User logged in'})
+
+    } catch (error) {
+        res.status(500).json({message:'Server crashed', error: error.message})
+    }
+}
+
+export const getMe = (req,res)=>{
+    const authenticatedUser = req.user
+    res.status(200).json({authenticatedUser})
 }
