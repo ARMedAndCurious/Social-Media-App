@@ -11,6 +11,7 @@ const cookieOptions ={
 export const registerUser = async(req,res)=>{
 
     try {
+        
         const {name, username, email, password}= req.body
 
         if(!name || !username || !email || !password){
@@ -57,22 +58,36 @@ export const registerUser = async(req,res)=>{
 
 export const loginUser = async(req,res)=>{
     try {
-        const{email, password} = req.body
+        const{identifier, password} = req.body
 
-        if(!name || !password){
-            return res.status(400).json({message : 'All fields are Required'})
+        if(!identifier || !password){
+            return res.status(400).json({message : "Username/email and password are required"})
         }
-        const user = await User.findOne({email})
+        const user = await User.findOne({
+            $or: [
+                { email: identifier },
+                { username: identifier }
+            ]
+        });
 
         if(!user){
             return res.status(404).json({message : 'User not found'})
         }
-       const passwordMatched = await bycrpt.compare(password, user.password)
+       const passwordMatched = await bcyrpt.compare(password, user.password)
        if(!passwordMatched){
         return res.status(401).json({message: 'Password did not match'})
        }
 
-       res.status(200).json({message: 'User logged in'})
+       const token = genToken(user._id);
+
+        res.cookie("token", token, cookieOptions);
+
+        return res.status(200).json({
+            message: "User logged in",
+            user
+        });
+
+       
 
     } catch (error) {
         res.status(500).json({message:'Server crashed', error: error.message})
@@ -82,4 +97,12 @@ export const loginUser = async(req,res)=>{
 export const getMe = (req,res)=>{
     const authenticatedUser = req.user
     res.status(200).json({authenticatedUser})
+}
+
+export const logoutUser = async(req,res)=>{
+    res.clearCookies("token", cookieOptions)
+
+    return res.status(200).json({
+        message:"User logged out successfully"
+    })
 }
